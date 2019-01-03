@@ -1,0 +1,464 @@
+\documentclass[a4paper, landscape]{article}
+
+\usepackage[a3paper,top=3cm, bottom=3cm, left=5cm, right=5cm]{geometry}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{footnote} % to save and spew notes
+\usepackage{calc}
+\usepackage[hidelinks]{hyperref}
+\def\UrlFont{\rmfamily\itshape} % roman font in urls
+\usepackage{ragged2e}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{pgfcalendar}
+\usepackage{varwidth} % nodes size with adjusted width
+\usetikzlibrary{calc, backgrounds}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{arabic}
+
+\usepackage{fontspec}
+\setmainfont[Numbers=OldStyle]{Linux Libertine O}
+\setsansfont[Numbers=OldStyle]{Source Sans Pro}
+
+% Set start and end to line
+
+\newcount\timelinestartc
+\pgfcalendardatetojulian{1956-12-31}{\timelinestartc}
+\newcounter{timelinestart}
+\setcounter{timelinestart}{\timelinestartc}
+
+\newcount\timelineendc
+\pgfcalendardatetojulian{1967-07-17}{\timelineendc}
+\newcounter{timelineend}
+\setcounter{timelineend}{\timelineendc}
+
+\addtocounter{timelineend}{-\value{timelinestart}}
+
+\frenchspacing
+	
+
+\newlength{\nh}
+\setlength{\nh}{\totalheightof{\tiny Makkayjg}+4pt}
+ 
+\tikzstyle{nodedefault}=[
+    rounded corners
+    , fill=\nodecolor!10
+    , draw=\nodecolor!40
+    , font=\tiny
+    , rotate=-90
+    , anchor=west
+    , align=left
+    , minimum height=\nh
+    , inner sep=1.5pt
+    , outer sep=0pt
+    , line width=.2pt
+]
+\tikzstyle{legend}=[font=\tiny, align=center]
+
+% \record
+    % 1 [horizontal offset]
+    % 2 {<first record date>}
+    % 3 {<other record dates>}
+    % 4 {<Record name>}
+    % 5 {<Sidemen>}
+    % 6 {<release date>}
+    % 7 {<label>}
+    % 8 {<live/studio>}
+
+
+% \newcommand\monthday{\pgfcalendarifdate{\xopsc}{⟨tests⟩}{⟨code⟩}{⟨else code⟩}}
+
+\global\newcount\xposc
+\newcounter{xpos}
+
+
+\newcommand\nnewline{\\[-.5ex]}
+
+\newlength\vertadjust
+
+% takes discography date and writes nodes
+\newcommand\record[8][0pt]{
+
+    % Set color
+    \ifthenelse {\equal{#7}{Prestige}} {\def\nodecolor{red}} {}
+    \ifthenelse {\equal{#7}{Blue Note}} {\def\nodecolor{blue}} {}
+    \ifthenelse {\equal{#7}{Impulse!}} {\def\nodecolor{orange}} {}
+    \ifthenelse {\equal{#7}{Atlantic}} {\def\nodecolor{green}} {}
+    \ifthenelse {\equal{#7}{Pablo}} {\def\nodecolor{black}} {}
+    \ifthenelse {\equal{#7}{Savoy}} {\def\nodecolor{violet}} {}
+
+    \pgfcalendardatetojulian{#2}{\xposc}
+    \setcounter{xpos}{\xposc}
+    \addtocounter{xpos}{-\value{timelinestart}}
+
+    % Title on top
+    % \path
+        \ifthenelse{\equal{#1}{adj}}
+        {
+            \path (record.north west) 
+            node [nodedefault, anchor=south west,font=\itshape\tiny]
+            (record)
+            {#4\strut};
+        }
+        {
+            \path (\value{xpos},3.5) ++ (#1,0)
+             node [nodedefault,font=\itshape\tiny]
+            (record) 
+            {#4\vphantom{lj}};
+        }
+
+     % Live/studio with star
+
+     \ifthenelse{\equal{#8}{live}}
+         { \path 
+            let \p1 = (record) in 
+            (\x1,3.5cm)
+             node 
+             [font=\tiny, anchor=south, inner sep=1pt] {*};}
+         {}
+
+\draw [very thin] (record.east) to (\value{xpos},0) ;
+
+    % Sidemen below
+    
+    \path 
+        let \p1 = (record) in 
+        (\x1,-.8cm)
+        node [nodedefault] (sidemen)
+        {#5\vphantom{J}};
+
+
+    % Print date
+    \newcount\recordingyear
+    \newcount\recordingmonth
+    \newcount\recordingday
+    
+    \pgfcalendarjuliantodate{\xposc}{\recordingyear}{\recordingmonth}{\recordingday} 
+    \edef\textrecmonth{\pgfcalendarmonthshortname{\recordingmonth}}
+    \edef\textrecday{\recordingday}
+
+    % recod date above
+    \path 
+        let \p1 = (record) in
+        (\x1, 4.4cm) 
+        node [anchor=west, rotate=-90] (recdate) {\tiny\textrecmonth};
+    \path 
+        let \p1 = (record) in
+        (\x1, 3.65cm) 
+        node [anchor=east, rotate=-90]  {\tiny\textrecday} 
+        ;
+
+% Release year above if ither than recirding year
+    \ifthenelse{\recordingyear=#6}{}{%
+    \path 
+        let \p1 = (record) in
+        (\x1, 4.5cm) 
+      node [color=gray, nodedefault, draw=white, fill=white, anchor=east]  {(#6)}; 
+    }
+
+    \node at (sidemen.east) [anchor=west, rotate=-90, font=\tiny] {#3};
+
+}
+
+
+\newlength\legendx
+\setlength\legendx{-1cm}
+
+% LEGEND
+
+\newcommand\makethelegend{
+\small
+    \node at (\legendx, 4.3) 
+        [legend, anchor=north] (recorddatelegend) 
+        {First recording date} ;
+
+    \node at (\legendx, 4.5) 
+        [legend, anchor=south, color=gray] 
+        {Release year\\(if other than first rec.)};
+
+    \node at (\legendx, 3.65) [legend] {*\,=\,live};
+
+        \def\nodecolor{black}
+
+    \node at (\legendx, 3.1) [] {Album};
+
+    \node at (\legendx, 2.8) [inner sep=1.5pt, legend, anchor=north] (albumlegend) {Record label} ;
+
+    \foreach \l/\c in 
+        {Prestige/red,
+        Blue~Note/blue,
+        Savoy/violet,
+        Atlantic/green,
+        Pablo/black,
+        Impulse!/orange}
+        {
+            \node at (albumlegend.south) 
+                [inner sep=1.5pt, legend, rounded corners, draw=\c!40, fill=\c!10, anchor=north]
+                (albumlegend) {\l\vphantom{jk}};
+        }
+
+        \node at (\legendx, -1.5) 
+            []
+            {Personnel};
+
+        \node at (\legendx,-4)
+            [legend]
+            {Other\\recording\\dates};
+}
+
+        \newcommand\infobox[1]{%
+        \draw[gray] let \p1 = (work) in node (infobox)
+  [color=gray, anchor=north,draw=black, align=left, font=\scriptsize\sffamily]
+   at (\x1,-5) {\begin{varwidth}{2.5cm}\RaggedRight#1\end{varwidth}};
+  \draw (infobox) -- (work.east);
+}
+
+
+
+% phases
+% \phase{<name>}{<begin>}{<end>}
+\newcommand{\phase}[3]{
+\draw [color=black!30] (#2+2mm, 8) -- (#2+2mm, 7) -- (#3-2mm, 7) node [midway, above, align=center, font=\sffamily] {#1} -- (#3-2mm, 6.8);
+}
+
+
+\setlength\parindent{0pt}
+
+\begin{document}
+\thispagestyle{empty}
+
+\begin{minipage}[t]{.4\textwidth}
+{\huge Timeline of the John Coltrane discography}\\[\medskipamount]
+\textit{\today\\v. 1.0}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{.38\textwidth}
+\large
+This timeline is based on data collected from Wikipedia. Only albums featuring Coltrane as band leader are included. Albums are ordered by first recording date.
+\end{minipage}
+
+
+\vfill
+
+\center
+
+
+\begin{tikzpicture}[x=\textwidth/\value{timelineend}, trim left=0]
+
+\useasboundingbox (0,-5) rectangle (\value{timelineend},5);
+
+
+\makethelegend
+
+\record[-5ex]{1957-04-18}{}{The Cats}{IS, TF, KB, DW, LHa}{1959}{Prestige}{studio}
+\record[adj]{1957-04-20}{}{Dakar}{CP, PA, MW, DW, AT}{1963}{Prestige}{studio}
+\record[adj]{1957-05-17}{}{Cattin' with Coltrane\nnewline and Quinichette}{PQ (co-leader), MW, JE, ET}{1959}{Prestige}{studio}
+\record[adj]{1957-05-31}{1957-08-16, 1958-01-10}{Lush Life}{EM, AT, RG, PC, DB, LHa, AH}{1961}{Prestige}{studio}
+\record[adj]{1957-05-31}{}{Coltrane}{JS, SS, RG, MW, PC, AH}{1957}{Prestige}{studio}
+\record[adj]{1957-08-16}{1958-01-10, 1958-03-26}{The Last Trane}{DB, RG, PC, EM, LHa, AT}{1965}{Prestige}{studio}
+\record[adj]{1957-08-23}{}{John Coltrane with\nnewline the Red Garland Trio}{RG, PC, AT}{1958}{Prestige}{studio}
+\record[adj]{1957-09-15}{}{Blue Train}{LM, CF, KD, PC, PJJ}{1957}{Blue Note}{studio}
+\record[adj]{1957-12-20}{1958-01-10, 1958-12-26}{The Believer}{RG, PC, DB, FH, LHa, AT, GC, RD, SDB, LR}{1964}{Prestige}{studio}
+\record[adj]{1958-02-07}{}{Soultrane}{RG, PC, AT}{1958}{Prestige}{studio}
+\record[adj]{1958-03-07}{}{Kenny Burell \& John Coltrane}{KB (co-leader), TF, PC, JC}{1963}{Prestige}{studio}
+\record[adj]{1958-03-26}{}{Settin' the Pace}{RG, PC, AT}{1961}{Prestige}{studio}
+\record[adj]{1958-05-13}{1958-06-24}{Tanganyika Strut}{WH (co-leader), CF, TF, HW, AJ, AT}{1958}{Savoy}{studio}
+\record[adj]{1958-05-23}{}{Black Pearls}{DB, RG, PC, AT}{1964}{Prestige}{studio}
+\record[adj]{1958-06-24}{}{Jazz Way Out}{WH (co-leader), CF, TF, AJ, AT}{1958}{Savoy}{studio}
+\record[adj]{1958-07-11}{1958-12-26}{Bahia}{WH, FH, RG, PC, AT, JC}{1965}{Prestige}{studio}
+\record[adj]{1958-07-11}{1958-12-26}{Stardust}{WH, FH, RG, PC, JC, AT}{1963}{Prestige}{studio}
+\record[adj]{1958-07-11}{}{Standard Coltrane}{WH, RG, PC, JC}{1962}{Prestige}{studio}
+\record{1959-05-04}{1959-05-05, 1959-12-02}{Giant Steps}{TF, WK, PC, AT, JC, CW, LHu}{1960}{Atlantic}{studio}
+\record{1959-11-24}{1959-12-02, 1960-10-02}{Coltrane Jazz}{WK, PC, JC, MT, SDa, EJ}{1961}{Atlantic}{studio}
+\record{1960-06-28}{1960-07-08}{The Avant-Garde}{DCh (co-leader), CH, PH, EB}{1966}{Atlantic}{studio}
+\record[-\nh]{1960-10-21}{1960-10-24, 1960-10-26}{My Favorite Things}{MT, SDa, EJ}{1961}{Atlantic}{studio}
+\record[adj]{1960-10-24}{1960-10-26}{Coltrane's Sound}{MT, SDa, EJ}{1964}{Atlantic}{studio}
+\record[adj]{1960-10-24}{}{Coltrane Plays the Blues}{MT, SDa, EJ}{1962}{Atlantic}{studio}
+% Bigger sidemanbox
+\record[-.7\nh]{1961-05-23}{1961-06-07}{Africa/Brass}{LP, FH, BL, BW, JP, CG, CB, BB, GB,\nnewline JW, JBu, BN, DCo, RS, ED, MT, RW, AD, EJ}{1961}{Impulse!}{studio}
+\record[.7\nh]{1961-05-25}{}{Olé Coltrane}{ED, FH, MT, RW, AD, EJ}{1962}{Atlantic}{studio}
+\record[-3ex]{1961-11-01-03}{1961-11-05}{The Complete 1961\nnewline Village Vanguard Recordings}{ED, MT, RW, JG, EJ, RH, GB, AAM}{1997}{Impule!}{live}
+\record[adj]{1961-11-02}{1961-11-03}{Live! at the Village Vanguard}{ED, MT, RW, JG, EJ}{1962}{Impule!}{live}
+\record[adj]{1961-11-02}{1963-07-07}{Newport '63}{ED, MT, RW, JG, RH}{1993}{Impule!}{live}
+\record[adj]{1961-11-05}{1962-09-18, 1963-04-29}{Impressions}{MT, JG, EJ, RH, ED, RW}{1963}{Impulse!}{studio}
+\record[adj]{1961-12-21}{1962-09-18, 1962-11-13}{Ballads}{MT, JG, RW, EJ}{1963}{Impulse!}{studio}
+\record{1962-04-11}{1962-06-19, 1962-06-20, 1962-06-29}{Coltrane}{MT, JG, EJ}{1962}{Impulse!}{studio}
+\record[-1.5ex]{1962-09-00}{}{Bye Bye Blackbird}{MT, JG, EJ}{1981}{Pablo}{live}
+\record[adj]{1962-09-26}{}{Duke Ellington\nnewline\& John Coltrane}{DE (co-leader), JG, EJ, AB, SW}{1963}{Impulse!}{studio}
+\record[adj]{1962-11-00}{}{The European Tour}{MT, JG, EJ}{1980}{Pablo}{live}
+\record[adj]{1962-11-00}{}{The Paris Concert}{MT, JG, EJ}{1979}{Pablo}{live}
+\record[adj]{1963-03-06}{}{Both Directions at Once:\nnewline The Lost Album}{MT, JG, EJ}{2018}{Impulse!}{studio}
+\record[adj]{1963-03-07}{}{John Coltrane\nnewline and Jonny Hartman}{JH (co-leader), MT, JG, EJ}{1963}{Impulse!}{studio}
+\record{1963-07-07}{1965-10-14}{Selflessness: Featuring\nnewline My Favorite Things}{MT, JG, EJ, PS, DG, RH, FB, JL}{1969}{Impulse!}{studio}
+\record[-.75ex]{1963-10-08}{1963-11-18}{Live at Birdland}{MT, JG, EJ}{1964}{Impulse!}{studio}
+\record[adj]{1963-10-22}{1963-11-02}{Afro Blue Impressions}{MT, JG, EJ}{1977}{Pablo}{live}
+\record{1964-04-27}{1964-06-01}{Crescent}{MT, JG, EJ}{1964}{Impulse!}{studio}
+\record[-1ex]{1964-12-09}{}{A Love Supreme}{MT, JG, EJ}{1965}{Impulse!}{studio}
+\record[adj]{1965-02-18}{1965-05-17}{The John Coltrane\nnewline Quartet Plays}{MT, JG, AD, EJ}{1965}{Impulse!}{studio}
+\record[adj]{1965-03-26}{1965-05-07}{One Down, One Up}{MT, JG, EJ}{2005}{Impule!}{live}
+\record[adj]{1965-05-26}{1965-06-10}{Transition}{MT, JG, EJ}{1970}{Impulse!}{studio}
+\record[adj]{1965-06-10}{1965-06-16, 1965-10-14}{Kulu Sé Mama}{MT, JG, EJ, PS, DRG, FB, JL}{1967}{Impulse!}{studio}
+\record[adj]{1965-06-28}{}{Ascension}{MT, JG, EJ, MB, AD, FH, DJ, PS, AS, JT}{1966}{Impulse!}{studio}
+\record[adj]{1965-07-02}{}{New Thing at Newport}{MT, JG, EJ (John Coltrane's set)}{1965}{Impule!}{live}
+\record[adj]{1965-08-26}{}{Sun Ship}{MT, JG, EJ}{1971}{Impulse!}{studio}
+\record[adj]{1965-09-02}{}{First Meditations}{MT, JG, EJ}{1977}{Impulse!}{studio}
+\record[adj]{1965-09-30}{}{Live in Seattle}{MT, JG, EJ, DG, PS}{1971}{Impule!}{live}
+\record[adj]{1965-10-01}{}{Om}{MT, JG, EJ, DG, PS, JBr}{1968}{Impulse!}{studio}
+\record[adj]{1965-11-23}{}{Meditations}{MT, JG, EJ, PS, RAl}{1966}{Impulse!}{studio}
+\record[adj]{1966-02-02}{1968-01-29}{Cosmic Music}{PS, AC, JG, RAl, RAp}{1968}{Impulse!}{studio}
+\record{1966-05-28}{}{Live at the Village\nnewline Vanguard Again!}{PS, AC, JG, RAl, ER}{1966}{Impule!}{live}
+\record[adj]{1966-07-11}{1966-07-22}{Live in Japan}{AC, PS, JG, RAl}{1991}{Impule!}{live}
+\record[adj]{1966-07-22}{}{Concert in Japan}{AC, PS, JG, RAl}{1973}{Impule!}{live}
+\record{1966-11-11}{}{Offering: Live at\nnewline Temple University}{AC, PS, SJ, RAl}{2014}{Impule!}{live}
+\record[-1ex]{1967-02-15}{1967-03-07}{Expression}{AC, PS, JG, RAl}{1967}{Impulse!}{studio}
+\record[adj]{1967-02-15}{}{Stellar Regions}{AC, JG, RAl}{1995}{Impulse!}{studio}
+\record[adj]{1967-02-22}{}{Interstellar Space}{RAl}{1974}{Impulse!}{studio}
+\record[adj]{1967-04-23}{}{The Olatunji Concert:\nnewline The Last Live Recording}{AC, PS, JG, RAl}{2001}{Impule!}{live}
+ 
+
+
+% Sort the list below with `sort n /{/`
+
+% Phases
+% Data collection, formation, theroeticlaelaboration, consolidiation, degeneration
+% \phase{Pre-theoretical\\grammar}{650}{780}
+    % \phase{Precursors}{660}{770}
+    % \phase{Early grammar}{770}{920} % p.8
+    % \phase{Codification\\and systematization}{920}{1100}
+    % \phase{Elaboration of forms\\of presentation}{1100}{1520}
+
+
+
+
+
+	% Axis and death
+         \node (death) at (\value{timelineend}, 0) {\large ✝};
+	 \draw[ultra thick] (0,0) -- (death.west); 
+
+        \path (\value{timelineend},-.5cm) 
+        node [font=\small, anchor=west, rotate=-90, align=left] 
+        {July 17, 1967};
+
+        % Ticks
+        \newcount\tickc
+        \newcounter{tick}
+         \foreach \x in {57,...,67}
+            {
+                \pgfcalendardatetojulian{19\x-01-01}{\tickc}
+                \setcounter{tick}{\tickc}
+                \addtocounter{tick}{-\value{timelinestart}}
+                \draw (\value{tick}, 0) -- (\value{tick},-.2) node [anchor=north, font=\bfseries] {19\x};
+            }
+
+	% Hijra
+	% \draw [very thick] (622, .2) -- (622, -.5) 
+	  % node [rotate=-90, anchor=west] {\textbf{\textit{al-Hijra}}~(622)};
+
+
+
+\end{tikzpicture}
+
+\vfill
+
+{\small
+\newcommand{\split}{\end{tabular}\hfill\begin{tabular}{@{}l@{~}l@{}}}
+\begin{tabular}{@{}l@{~}l@{}}
+
+AAM:&Ahmed Abdul-Malik\\
+AB:&Aaron Bell\\
+AC:&Alice Coltrane\\
+AD:&Art Davis\\
+AJ:&Alvin Jackson\\
+AS:&Archie Shepp\\
+AT:&Art Taylor\\
+AH:&Albert "Tootie" Heath\\
+BB:&Bill Barber\\
+BL:&Booker Little\\\split
+BN:&Bob Northern\\
+BW:&Britt Woodman\\
+CB:&Carl Bowman\\
+CF:&Curtis Fuller\\
+CG:&Charles Greenlee\\
+CH:&Charlie Haden\\
+CP:&Cecil Payne\\
+CW:&Cedar Walton\\
+DB:&Donald Byrd\\
+DCh:&Don Cherry\\\split
+DCo:&Donald Corrado\\
+DE:&Duke Ellington\\
+DG:&Donald Garrett\\
+DJ:&Dewey Johnson\\
+DRG:&Donald Rafael Garrett\\
+DW:&Doug Watkins\\
+EB:&Ed Blackwell\\
+ED:&Eric Dolphy\\
+EJ:&Elvin Jones\\
+EM:&Earl May\\\split
+ER:&Emanuel Rahim\\
+ET:&Ed Thigpen\\
+FB:&Frank Butler\\
+FH:&Freddie Hubbard\\
+GB:&Garvin Bushell\\
+GC:&Gil Coggins\\
+HW:&Howard Williams\\
+IS:&Idrees Sulieman\\
+JBu:&Jim Buffington\\
+JBr:&Joe Brazil\\\split
+JC:&Jimmy Cobb\\
+JE:&Julian Euell\\
+JG:&Jimmy Garrison\\
+JH:&Johnny Hartman\\
+JL:&Juno Lewis\\
+JP:&Julian Priester\\
+JS:&Johnnie Splawn\\
+JT:&John Tchicai\\
+JW:&Julius Watkins\\
+KB:&Kenny Burrell\\\split
+KD:&Kenny Drew\\
+LHu:&Lex Humphries\\
+LHa:&Louis Hayes\\
+LM:&Lee Morgan\\
+LP:&Laurdine "Pat" Patrick\\
+LR:&Larry Richie\\
+MB:&Marion Brown\\
+MT:&McCoy Tyner\\
+MW:&Mal Waldron\\
+PA:&Pepper Adams\\\split
+PC:&Paul Chambers\\
+PH:&Percy Heath\\
+PJJ:&Philly Joe Jones\\
+PQ:&Paul Quinichette\\
+PS:&Pharoah Sanders\\
+RAl:&Rashied Ali\\
+RAp:&Ray Appleton\\
+RD:&Ray Draper\\
+RG:&Red Garland\\
+RH:&Roy Haynes\\\split
+RS:&Robert Swisshelm\\
+RW:&Reggie Workman\\
+SDa:&Steve Davis\\
+SDB:&Spanky DeBrest\\
+SJ:&Sonny Johnson\\
+SS:&Sahib Shihab\\
+SW:&Sam Woodyard\\
+TF:&Tommy Flanagan\\
+WH:&Wilbur Harden\\
+WK:&Wynton Kelly\\
+
+\end{tabular}
+} % end scripsize
+
+\vfill\null
+\center
+\begin{minipage}{8cm}
+\center
+\tiny
+Written by Andreas Hallberg.
+This document is licensed under a Creative Commons Attribution 4.0 International license. 
+It is available for download at \url{http://andreasmhallberg.github.io/images/coltrane-timeline.pdf}.
+For suggestions on improvements, contact the author at \href{mailto:andreasmartenhallberg@gmail.com}{\itshape andreas.hallberg@mellost.lu.se}.
+\end{minipage}
+
+\end{document}
